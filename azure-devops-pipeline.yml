@@ -1,0 +1,56 @@
+# Auto trigger when changes on main
+trigger:
+  branches:
+    include:
+      - main
+
+# Use the Microsoft hosted runners
+pool:
+    vmImage: 'ubuntu-latest'
+
+# Load the common variables repo
+resources:
+  repositories:
+  - repository: az-packer-common
+    type: github
+    endpoint: Azure
+    name: kevinpz/az-packer-common
+
+# Source the variables
+variables:
+- template: common-variables.yml@az-packer-common
+
+stages:
+# Deploy the base for the Azure Image Builder service
+- stage: Deploy
+  jobs:
+  - job: Deploy
+    steps:
+      # Download Terraform binary
+      - task: TerraformInstaller@0
+        displayName: install terraform
+        inputs:
+          terraformVersion: latest
+      # Init Terraform backend and download providers
+      - task: TerraformCLI@0
+        displayName: 'terraform init'
+        inputs:
+          workingDirectory: terraform
+          command: init
+          # Configure the backend to store the .tfstate file
+          backendType: azurerm
+          backendServiceArm: '$(sc_name)'
+          backendAzureRmSubscriptionId: '$(subscription_id)'
+          backendAzureRmResourceGroupName: '$(stg_rg_name)'
+          backendAzureRmStorageAccountName: '$(stg_name)'
+          backendAzureRmContainerName: '$(stg_container_name)'
+          backendAzureRmKey: '$(System.TeamProject)/$(Build.Repository.Name).tfstate'
+      # Deploy Terraform ressources
+      - task: TerraformCLI@0
+        displayName: 'terraform apply'
+        inputs:
+          workingDirectory: terraform
+          command: apply
+          environmentServiceName: '$(sc_name)'
+          providerAzureRmSubscriptionId: '$(subscription_id)'
+          commandOptions: '-var "location=$(location)" -var "rg_name=$(rg_name)" -var "gallery_name=$(gallery_name)"'
