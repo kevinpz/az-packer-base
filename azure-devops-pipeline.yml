@@ -40,7 +40,7 @@ stages:
           # Configure the backend to store the .tfstate file
           backendType: azurerm
           backendServiceArm: '$(sc_name)'
-          backendAzureRmSubscriptionId: '$(subscription_id)'
+          backendAzureRmSubscriptionId: '$(backend_subscription_id)'
           backendAzureRmResourceGroupName: '$(stg_rg_name)'
           backendAzureRmStorageAccountName: '$(stg_name)'
           backendAzureRmContainerName: '$(stg_container_name)'
@@ -52,5 +52,5 @@ stages:
           workingDirectory: terraform
           command: apply
           environmentServiceName: '$(sc_name)'
-          providerAzureRmSubscriptionId: '$(subscription_id)'
+          providerAzureRmSubscriptionId: '$(depl_subscription_id)'
           commandOptions: '-var "location=$(location)" -var "rg_name=$(rg_name)" -var "gallery_name=$(gallery_name)"'
